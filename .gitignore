@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Developer specific files
+work_flow.md
+elore_jewels_architecture.png
+elore_jewels_architecture.py
