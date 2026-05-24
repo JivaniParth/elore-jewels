@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "Inter", sans-serif;
+
+  --color-primary-white: #FFFFFF;
+  --color-primary-offwhite: #F9F9F9;
+  --color-secondary-blue: #0F2C59;
+  --color-secondary-green: #144272;
+  --color-accent-rose: #B78472;
+  --color-accent-gold: #D4AF37;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-primary-offwhite);
+    color: var(--color-secondary-blue);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+  }
+}
