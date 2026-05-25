@@ -8,7 +8,7 @@ import StripeWrapper from '../../components/StripeWrapper';
 import PaymentForm from '../../components/PaymentForm';
 
 const Checkout = () => {
-  const { cartItems, cartTotal } = useCart();
+  const { cartItems, cartTotal, clearCart } = useCart();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, isAuthenticated } = useSelector(state => state.auth);
@@ -67,7 +67,7 @@ const Checkout = () => {
   const handlePaymentSuccess = async (paymentIntent) => {
     try {
       const orderData = {
-        orderItems: cartItems.map(item => ({
+        items: cartItems.map(item => ({
           name: item.name,
           quantity: item.quantity,
           image: item.image,
@@ -75,9 +75,9 @@ const Checkout = () => {
           product: item.id || item._id
         })),
         shippingAddress: {
-          address: info.address,
+          line1: info.address,
           city: info.city,
-          postalCode: info.zip,
+          pincode: info.zip,
           country: 'India'
         },
         paymentMethod: paymentMethod === 'card' ? 'Stripe' : 'COD',
@@ -89,7 +89,7 @@ const Checkout = () => {
       };
       
       const result = await dispatch(placeOrder(orderData)).unwrap();
-      // Assuming context has a clearCart method (not implemented, so we skip for now)
+      clearCart();
       navigate(`/orders/${result._id}/success`);
     } catch (err) {
       alert(err || "Error placing order");

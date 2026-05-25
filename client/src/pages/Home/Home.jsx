@@ -86,7 +86,7 @@ const Home = () => {
               products.map(product => (
                  <div key={product.id} className="group cursor-pointer">
                    <div className="relative overflow-hidden bg-gray-100 aspect-[4/5] mb-4">
-                     <Link to={`/product/${product.id}`}>
+                     <Link to={`/product/${product.slug}`}>
                        <img src={product.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={product.name} />
                        <img src={product.hoverImage} className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500" alt={product.name + ' worn'} />
                      </Link>
