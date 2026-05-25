@@ -23,7 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 
+# environment variables
+.env
+.env*
+
 # Developer specific files
-work_flow.md
+elore_jewels_work_flow.md
 elore_jewels_architecture.png
 elore_jewels_architecture.py
+elore_jewels_mongodb_schema.docx
