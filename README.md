@@ -1,47 +1,86 @@
 # Elore Jewels
 
-Elore Jewels is a premium, high-converting E-commerce UI/UX for an online fashion jewelry brand. The design is modern, clean, and highly functional, blending traditional elegance with contemporary fashion.
+Elore Jewels is a premium, high-converting E-commerce application for an online fashion jewelry brand. Built on the **MERN Stack**, it features a modern, elegant, and highly functional user interface on the frontend, powered by a robust and scalable Express API on the backend.
 
 ## Tech Stack
+
+### Frontend (Client)
 - **Framework:** React + Vite
 - **Styling:** Tailwind CSS v4
-- **Routing:** React Router DOM
+- **Routing:** React Router DOM v6
+- **State Management:** React Context (CartContext)
 - **Icons:** React Icons
 
+### Backend (Server)
+- **Runtime & Framework:** Node.js + Express.js
+- **Database & ODM:** MongoDB Atlas + Mongoose
+- **Authentication:** JWT (JSON Web Tokens) with Access & Refresh tokens
+- **Storage:** AWS S3 (via `@aws-sdk/client-s3` and `multer-s3`) for product media and avatars
+- **Payments:** Stripe Gateway integration
+- **Email:** Nodemailer (SMTP)
+
 ## Features
+
 - **Responsive Design:** Mobile-first approach ensuring a seamless experience across all devices.
-- **Dynamic Data Mocking:** Products are fetched from a mock JSON API (`public/data.json`) to simulate real-world data fetching without hardcoding.
-- **Global State Management:** A React Context (`CartContext`) manages the shopping cart state, including an interactive Slide-Out Cart Drawer.
-- **Core Pages Built:**
-  - **Homepage:** Hero banner, category quick links, and a trending section.
-  - **Product Listing Page (PLP):** Advanced product grid with functional "Load More" pagination simulating network delays.
-  - **Product Detail Page (PDP):** Interactive media gallery, Urgency Triggers, and detailed product accordions.
-  - **Cart & Checkout:** Split-screen cart with a free-shipping progress bar, and a minimalist 3-step checkout flow.
+- **Robust Authentication:** Secure user registration, login, and token rotation using HTTP-only cookies and JWTs.
+- **Product & Category Management:** Complete catalog functionality with filtering, searching, and sub-categorization.
+- **Shopping Cart & Checkout:** Interactive Slide-Out Cart Drawer and a seamless 3-step checkout process integrated with Stripe for secure payments.
+- **Order Tracking:** Users can view order history and track the status of current orders.
+- **Reviews & Ratings:** Authenticated users can leave reviews and ratings on products they have purchased.
+- **Media Uploads:** Direct upload of product images and user avatars to an AWS S3 bucket.
+- **Email & SMS Notifications:** Automated alerts for order confirmation, shipping updates, and promotions.
 
 ## Getting Started
 
-To run the project locally, follow these steps:
+### Prerequisites
+- Node.js (v18+)
+- MongoDB (Atlas or local)
+- An AWS Account (for S3)
+- A Stripe Developer Account
 
-1. **Navigate to the client directory:**
-   ```bash
-   cd client
-   ```
+### 1. Server Setup
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+Navigate to the `server` directory and install dependencies:
+```bash
+cd server
+npm install
+```
 
-3. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
+Configure your environment variables:
+1. Create a `.env` file in the `server` directory (you can copy `.env.example`).
+2. Update the variables with your own credentials (MongoDB URI, JWT Secrets, AWS Keys, Stripe Secret).
 
-4. **Open in browser:**
-   Navigate to `http://localhost:5173` in your web browser.
+Start the backend server (runs on `http://localhost:5000` by default):
+```bash
+npm run dev
+```
+
+### 2. Client Setup
+
+Open a new terminal tab, navigate to the `client` directory, and install dependencies:
+```bash
+cd client
+npm install
+```
+
+Start the frontend development server:
+```bash
+npm run dev
+```
+
+Navigate to `http://localhost:5173` in your web browser to view the application!
 
 ## Project Structure
-- `client/src/components/`: Reusable UI components (Header, Footer, CartDrawer, Layout)
-- `client/src/pages/`: Page-level components (Home, PLP, PDP, Cart, Checkout)
-- `client/src/context/`: Global state management (CartContext)
-- `client/public/`: Static assets and the `data.json` mock database.
+
+### `/server`
+- `config/`: Database and logger configurations
+- `controllers/`: Route handlers mapping to business logic
+- `middleware/`: Global error handlers, route protection (auth), and rate limiting
+- `models/`: Mongoose schemas (Users, Products, Categories, Orders, Reviews, Notifications)
+- `routes/`: API endpoint definitions
+
+### `/client`
+- `src/components/`: Reusable UI components (Header, Footer, CartDrawer, Layout)
+- `src/pages/`: Page-level components (Home, PLP, PDP, Cart, Checkout)
+- `src/context/`: Global state management
+- `public/`: Static assets and mock data (if the backend is not yet populated)
