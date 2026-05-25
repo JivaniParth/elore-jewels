@@ -50,7 +50,7 @@ const CartDrawer = () => {
                           <FiTrash2 size={16} />
                         </button>
                       </div>
-                      <p className="font-bold text-[#B78472] mt-1">${item.price.toFixed(2)}</p>
+                      <p className="font-bold text-[#B78472] mt-1">₹{item.price.toFixed(2)}</p>
                     </div>
                     <div className="flex items-center border border-gray-300 w-fit">
                       <button 
@@ -75,7 +75,7 @@ const CartDrawer = () => {
           <div className="border-t p-4 bg-[#F9F9F9]">
             <div className="flex justify-between items-center mb-4 text-[#0F2C59] font-bold text-lg">
               <span>Subtotal</span>
-              <span>${cartTotal.toFixed(2)}</span>
+              <span>₹{cartTotal.toFixed(2)}</span>
             </div>
             <p className="text-xs text-gray-500 mb-4 text-center">Shipping & taxes calculated at checkout</p>
             <Link 

@@ -47,12 +47,12 @@ const Home = () => {
         <h2 className="text-2xl font-serif text-center mb-8 text-[#0F2C59]">Shop by Category</h2>
         <div className="flex flex-wrap justify-center gap-6 md:gap-12">
           {[
-            { name: 'Oxidized', img: '/oxidized_necklace.png' },
-            { name: 'Gold Plated', img: '/gold_bangles.png' },
-            { name: 'Silver', img: '/silver_earrings.png' },
-            { name: 'Men\'s', img: '/mens_ring.png' },
+            { name: 'Oxidized', img: '/oxidized_necklace.png', link: '/collections/oxidized' },
+            { name: 'Gold Plated', img: '/gold_bangles.png', link: '/collections/gold-plated' },
+            { name: 'Silver', img: '/silver_earrings.png', link: '/collections/silver' },
+            { name: 'Men\'s', img: '/mens_ring.png', link: '/collections/mens' },
           ].map((cat, i) => (
-            <Link key={i} to="/collections/all" className="flex flex-col items-center group">
+            <Link key={i} to={cat.link} className="flex flex-col items-center group">
               <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-transparent group-hover:border-[#D4AF37] transition-all p-1">
                 <img src={cat.img} alt={cat.name} className="w-full h-full object-cover rounded-full" />
               </div>
@@ -103,9 +103,9 @@ const Home = () => {
                    </div>
                    <h3 className="font-sans text-sm font-medium text-[#0F2C59] mb-1 truncate">{product.name}</h3>
                    <div className="flex items-center space-x-2">
-                     <span className="font-bold text-[#B78472]">${product.price.toFixed(2)}</span>
+                     <span className="font-bold text-[#B78472]">₹{product.price.toFixed(2)}</span>
                      {product.originalPrice > product.price && (
-                       <span className="text-xs text-gray-400 line-through">${product.originalPrice.toFixed(2)}</span>
+                       <span className="text-xs text-gray-400 line-through">₹{product.originalPrice.toFixed(2)}</span>
                      )}
                    </div>
                  </div>

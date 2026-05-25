@@ -5,10 +5,13 @@ import { useCart } from '../../context/CartContext';
 
 const PDP = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mainImage, setMainImage] = useState('');
+  const [quantity, setQuantity] = useState(1);
   const [pincode, setPincode] = useState('');
+  const [pincodeStatus, setPincodeStatus] = useState(null); // null, 'checking', 'available', 'unavailable'
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -76,10 +79,10 @@ const PDP = () => {
           </div>
 
           <div className="mb-6">
-            <div className="flex items-baseline space-x-3 mb-1">
-              <span className="text-3xl font-bold text-[#B78472]">${product.price.toFixed(2)}</span>
+            <div className="flex items-end space-x-4 mb-6 border-b border-gray-100 pb-6">
+              <span className="text-3xl font-bold text-[#B78472]">₹{product.price.toFixed(2)}</span>
               {product.originalPrice > product.price && (
-                <span className="text-lg text-gray-400 line-through">${product.originalPrice.toFixed(2)}</span>
+                <span className="text-lg text-gray-400 line-through">₹{product.originalPrice.toFixed(2)}</span>
               )}
               {product.discount > 0 && (
                 <span className="text-sm font-bold text-[#D4AF37]">({product.discount}% OFF)</span>
@@ -95,33 +98,50 @@ const PDP = () => {
           </div>
 
           {/* Buttons */}
-          <div className="flex flex-col space-y-3 mb-8">
+          <div className="flex flex-col space-y-3 w-full sm:w-2/3 mb-8">
             <button 
-              onClick={() => addToCart(product)}
-              className="w-full bg-[#B78472] hover:bg-[#a37260] text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md text-sm"
+              onClick={() => addToCart(product, quantity)}
+              className="bg-white border-2 border-[#0F2C59] text-[#0F2C59] hover:bg-gray-50 px-8 py-3 font-bold uppercase tracking-widest text-sm transition-colors"
             >
               Add to Bag
             </button>
-            <button className="w-full bg-[#0F2C59] hover:bg-[#144272] text-white py-4 font-bold uppercase tracking-widest transition-colors shadow-md text-sm">
+            <button 
+              onClick={() => {
+                addToCart(product, quantity);
+                navigate('/checkout');
+              }}
+              className="bg-[#0F2C59] border-2 border-[#0F2C59] text-white hover:bg-[#144272] px-8 py-3 font-bold uppercase tracking-widest text-sm transition-colors shadow-md"
+            >
               Buy it Now
             </button>
           </div>
 
-          {/* Pincode Validator */}
-          <div className="bg-[#F9F9F9] p-4 rounded mb-6 border border-gray-200">
-            <div className="flex items-center mb-2 text-[#0F2C59] font-medium">
-              <FiTruck className="mr-2" /> Check Delivery Date
-            </div>
+          {/* Delivery Checker */}
+          <div className="mb-8 p-4 bg-[#F9F9F9] border border-gray-200">
+            <h3 className="text-sm font-bold text-[#0F2C59] mb-3 flex items-center">
+              <FiTruck className="mr-2" /> Check Delivery Availability
+            </h3>
             <div className="flex">
               <input 
                 type="text" 
                 placeholder="Enter Pincode" 
-                className="flex-1 border border-gray-300 px-3 py-2 text-sm outline-none"
                 value={pincode}
                 onChange={(e) => setPincode(e.target.value)}
+                className="flex-1 border border-gray-300 p-2 text-sm outline-none focus:border-[#0F2C59]"
               />
-              <button className="bg-gray-800 text-white px-4 text-sm font-medium hover:bg-black">CHECK</button>
+              <button 
+                onClick={() => {
+                  if(!pincode) return;
+                  setPincodeStatus('checking');
+                  setTimeout(() => setPincodeStatus('available'), 800);
+                }}
+                className="bg-[#0F2C59] text-white px-4 text-sm font-medium hover:bg-[#144272] transition-colors"
+              >
+                Check
+              </button>
             </div>
+            {pincodeStatus === 'checking' && <p className="text-xs mt-2 text-gray-500">Checking...</p>}
+            {pincodeStatus === 'available' && <p className="text-xs mt-2 text-green-600 font-bold">Delivery available within 3-5 business days.</p>}
           </div>
 
           {/* Accordions */}
@@ -143,9 +163,9 @@ const PDP = () => {
                 )}
                 {tab === 'Offers' && (
                   <div className="pb-4 text-sm text-gray-600 font-sans leading-relaxed">
-                    <ul className="list-disc pl-4 space-y-1">
-                      <li>Use code <strong>ELORE10</strong> for 10% off.</li>
-                      <li>Flat $50 cashback on ICICI Bank Cards.</li>
+                    <ul className="list-disc pl-5 space-y-2 text-sm">
+                      <li>Use Code: ELORE10 for 10% off.</li>
+                      <li>Flat ₹500 cashback on ICICI Bank Cards.</li>
                     </ul>
                   </div>
                 )}

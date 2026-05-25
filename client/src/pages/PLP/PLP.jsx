@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FiChevronDown, FiHeart } from 'react-icons/fi';
 import { useCart } from '../../context/CartContext';
@@ -14,17 +14,13 @@ const PLP = () => {
   const title = location.pathname.includes('earrings') ? 'Earrings' 
               : location.pathname.includes('necklaces') ? 'Necklaces'
               : location.pathname.includes('bangles') ? 'Bangles & Bracelets'
+              : location.pathname.includes('oxidized') ? 'Oxidized Jewelry'
+              : location.pathname.includes('gold-plated') ? 'Gold Plated'
+              : location.pathname.includes('silver') ? 'Silver Jewelry'
+              : location.pathname.includes('mens') ? 'Men\'s Jewelry'
               : 'All Jewelry';
 
-  useEffect(() => {
-    // Reset when category changes
-    setProducts([]);
-    setPage(1);
-    setHasMore(true);
-    fetchProducts(1);
-  }, [location.pathname]);
-
-  const fetchProducts = (pageToFetch) => {
+  const fetchProducts = useCallback((pageToFetch) => {
     setLoading(true);
     // Simulate network request
     setTimeout(() => {
@@ -36,7 +32,13 @@ const PLP = () => {
           const startIndex = (pageToFetch - 1) * ITEMS_PER_PAGE;
           const endIndex = startIndex + ITEMS_PER_PAGE;
           
-          const newProducts = data.products.slice(startIndex, endIndex);
+          let filteredProducts = data.products;
+          // Basic client-side filtering based on URL path for demo purposes
+          if (location.pathname.includes('earrings')) filteredProducts = filteredProducts.filter(p => p.category === 'Earrings');
+          else if (location.pathname.includes('necklaces')) filteredProducts = filteredProducts.filter(p => p.category === 'Necklaces');
+          else if (location.pathname.includes('bangles')) filteredProducts = filteredProducts.filter(p => p.category === 'Bangles');
+          
+          const newProducts = filteredProducts.slice(startIndex, endIndex);
           
           if (pageToFetch === 1) {
             setProducts(newProducts);
@@ -44,13 +46,21 @@ const PLP = () => {
             setProducts(prev => [...prev, ...newProducts]);
           }
           
-          if (endIndex >= data.products.length) {
+          if (endIndex >= filteredProducts.length) {
             setHasMore(false);
           }
           setLoading(false);
         });
     }, 800);
-  };
+  }, [location.pathname]);
+
+  useEffect(() => {
+    // Reset when category changes
+    setProducts([]);
+    setPage(1);
+    setHasMore(true);
+    fetchProducts(1);
+  }, [fetchProducts]);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -144,9 +154,9 @@ const PLP = () => {
                  <div className="text-center">
                    <h3 className="font-sans text-sm font-medium text-[#0F2C59] mb-1 truncate px-1">{product.name}</h3>
                    <div className="flex items-center justify-center space-x-2">
-                     <span className="font-bold text-[#B78472]">${product.price.toFixed(2)}</span>
+                     <span className="font-bold text-[#B78472]">₹{product.price.toFixed(2)}</span>
                      {product.originalPrice > product.price && (
-                       <span className="text-xs text-gray-400 line-through">${product.originalPrice.toFixed(2)}</span>
+                       <span className="text-xs text-gray-400 line-through">₹{product.originalPrice.toFixed(2)}</span>
                      )}
                    </div>
                    <div className="text-[10px] text-yellow-500 mt-1">

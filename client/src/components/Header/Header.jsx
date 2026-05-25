@@ -7,11 +7,11 @@ const Header = () => {
 
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-50">
-      {/* Top Bar */}
-      <div className="bg-[#0F2C59] text-white text-xs py-2 text-center flex justify-between px-4 md:px-8">
-        <div className="hidden md:block">Track Order</div>
-        <div>Free Shipping on orders over $50 | Use Code: ELORE10</div>
-        <div className="hidden md:block">USD $ | EN</div>
+      {/* Top Announcement Bar */}
+      <div className="bg-[#0F2C59] text-white text-xs py-2 px-4 flex justify-between items-center font-sans tracking-wide">
+        <div className="hidden md:block">Free Shipping on orders over ₹2000 | Use Code: ELORE10</div>
+        <div className="md:hidden text-center w-full">Free Shipping over ₹2000</div>
+        <div className="hidden md:block">INR ₹ | EN</div>
       </div>
 
       {/* Main Header */}
