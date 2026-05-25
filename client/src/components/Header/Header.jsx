@@ -1,9 +1,22 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiSearch, FiUser, FiHeart, FiShoppingCart, FiMenu, FiCamera } from 'react-icons/fi';
 import { useCart } from '../../context/CartContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { logoutUser } from '../../store/slices/authSlice';
 
 const Header = () => {
   const { cartCount, setIsDrawerOpen } = useCart();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { isAuthenticated, user } = useSelector(state => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(logoutUser());
+    setIsUserMenuOpen(false);
+    navigate('/');
+  };
 
   return (
     <header className="w-full bg-white shadow-sm sticky top-0 z-50">
@@ -41,11 +54,31 @@ const Header = () => {
 
         {/* Icons */}
         <div className="flex items-center space-x-4 md:space-x-6 text-[#0F2C59]">
-          <button className="hidden md:block hover:text-[#B78472] transition-colors"><FiUser size={22} /></button>
-          <button className="relative hover:text-[#B78472] transition-colors">
+          <div className="relative">
+            <button 
+              onClick={() => isAuthenticated ? setIsUserMenuOpen(!isUserMenuOpen) : navigate('/login')}
+              className="hidden md:block hover:text-[#B78472] transition-colors"
+            >
+              <FiUser size={22} />
+            </button>
+            {isUserMenuOpen && isAuthenticated && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 shadow-lg py-2 z-50">
+                <div className="px-4 py-2 border-b border-gray-100 text-sm font-bold text-[#0F2C59] truncate">
+                  Hi, {user?.name?.split(' ')[0] || 'User'}
+                </div>
+                <Link to="/orders" onClick={() => setIsUserMenuOpen(false)} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">My Orders</Link>
+                <button onClick={handleLogout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50">Logout</button>
+              </div>
+            )}
+          </div>
+          <Link to="/wishlist" className="relative hover:text-[#B78472] transition-colors">
             <FiHeart size={22} />
-            <span className="absolute -top-1 -right-2 bg-[#D4AF37] text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">0</span>
-          </button>
+            {isAuthenticated && user?.wishlist?.length > 0 && (
+              <span className="absolute -top-1 -right-2 bg-[#D4AF37] text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-bold">
+                {user.wishlist.length}
+              </span>
+            )}
+          </Link>
           <button onClick={() => setIsDrawerOpen(true)} className="relative hover:text-[#B78472] transition-colors">
             <FiShoppingCart size={22} />
             {cartCount > 0 && (

@@ -1,35 +1,57 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FiHeart, FiShare2, FiTruck, FiChevronDown } from 'react-icons/fi';
 import { useCart } from '../../context/CartContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProductBySlug, clearCurrentProduct } from '../../store/slices/productSlice';
+import { userAPI } from '../../services/api';
+import { initAuth } from '../../store/slices/authSlice';
 
 const PDP = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  
+  const { current: product, loading, error } = useSelector(state => state.product);
+  
   const [mainImage, setMainImage] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [pincode, setPincode] = useState('');
-  const [pincodeStatus, setPincodeStatus] = useState(null); // null, 'checking', 'available', 'unavailable'
+  const [pincodeStatus, setPincodeStatus] = useState(null);
   const { addToCart } = useCart();
+  const [tab, setTab] = useState('Description');
 
   useEffect(() => {
-    fetch('/data.json')
-      .then(res => res.json())
-      .then(data => {
-        const found = data.products.find(p => p.id === id) || data.products[0];
-        setProduct(found);
-        setMainImage(found.image);
-        setLoading(false);
-      });
-  }, [id]);
+    dispatch(fetchProductBySlug(slug));
+    return () => {
+      dispatch(clearCurrentProduct());
+    };
+  }, [dispatch, slug]);
+
+  useEffect(() => {
+    if (product && product.images) {
+      setMainImage(product.images[0]);
+    }
+  }, [product]);
 
   if (loading || !product) {
     return <div className="p-20 text-center font-sans">Loading product...</div>;
   }
 
-  const images = [product.image, product.hoverImage, product.image, product.hoverImage];
+  if (error) {
+    return <div className="p-20 text-center font-sans text-red-500">Error loading product: {error}</div>;
+  }
+
+  const handleWishlist = async () => {
+    try {
+      await userAPI.toggleWishlist(product._id || product.id);
+      dispatch(initAuth());
+    } catch (err) {
+      alert('Please login to add items to your wishlist.');
+    }
+  };
+
+  const currentPrice = product.discountPrice > 0 ? product.discountPrice : product.price;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -42,11 +64,26 @@ const PDP = () => {
 
       <div className="flex flex-col md:flex-row gap-10">
         {/* Left Side (Media Gallery) */}
-        <div className="w-full md:w-1/2 flex flex-col-reverse md:flex-row gap-4">
-          <div className="flex md:flex-col gap-2 md:w-20 overflow-x-auto md:overflow-visible">
-            {images.map((img, idx) => (
+        <div className="w-full md:w-1/2 flex flex-col md:flex-row-reverse gap-4">
+          {/* Main Image */}
+          <div className="w-full md:w-[85%] bg-gray-50 relative aspect-[4/5] overflow-hidden">
+            <img 
+              src={mainImage} 
+              alt={product.name} 
+              className="w-full h-full object-cover"
+            />
+            {product.discountPrice > 0 && product.discountPrice < product.price && (
+              <span className="absolute top-4 left-4 bg-[#D4AF37] text-white text-xs font-bold px-3 py-1">
+                SALE
+              </span>
+            )}
+          </div>
+          
+          {/* Thumbnails */}
+          <div className="flex md:flex-col gap-3 w-full md:w-[15%] overflow-x-auto md:overflow-y-auto no-scrollbar">
+            {product.images.map((img, idx) => (
               <img 
-                key={idx} 
+                key={idx}
                 src={img} 
                 alt={`${product.name} view ${idx}`} 
                 onClick={() => setMainImage(img)}
@@ -54,47 +91,30 @@ const PDP = () => {
               />
             ))}
           </div>
-          <div className="flex-1 relative bg-gray-100 aspect-[4/5] overflow-hidden">
-            <img src={mainImage} className="w-full h-full object-cover" alt={product.name} />
-            <button className="absolute top-4 right-4 bg-white p-2 rounded-full shadow hover:text-red-500 transition-colors">
-              <FiHeart size={20} />
-            </button>
-            <button className="absolute top-16 right-4 bg-white p-2 rounded-full shadow hover:text-[#B78472] transition-colors">
-              <FiShare2 size={20} />
-            </button>
-          </div>
         </div>
 
-        {/* Right Side (Product Info) */}
-        <div className="w-full md:w-1/2">
-          <div className="mb-4 pb-4 border-b border-gray-200">
-            <h1 className="text-3xl font-serif text-[#0F2C59] mb-2">{product.name}</h1>
-            <div className="flex items-center space-x-4 font-sans text-sm">
-              <div className="flex items-center text-yellow-500">
-                <span className="mr-1">★ {product.rating}</span>
-                <span className="text-gray-400">({product.reviews} Reviews)</span>
-              </div>
-              <span className="text-green-600 bg-green-50 px-2 py-0.5 rounded font-medium">In Stock</span>
+        {/* Right Side (Product Details) */}
+        <div className="w-full md:w-1/2 font-sans">
+          <div className="flex justify-between items-start mb-2">
+            <h1 className="text-2xl md:text-4xl font-serif text-[#0F2C59] mb-2">{product.name}</h1>
+            <div className="flex space-x-3 text-gray-400">
+              <button onClick={handleWishlist} className="hover:text-red-500 transition-colors"><FiHeart size={22} /></button>
+              <button className="hover:text-[#0F2C59] transition-colors"><FiShare2 size={22} /></button>
             </div>
           </div>
+          <p className="text-sm text-gray-500 mb-4">SKU: {product.sku}</p>
 
           <div className="mb-6">
             <div className="flex items-end space-x-4 mb-6 border-b border-gray-100 pb-6">
-              <span className="text-3xl font-bold text-[#B78472]">₹{product.price.toFixed(2)}</span>
-              {product.originalPrice > product.price && (
-                <span className="text-lg text-gray-400 line-through">₹{product.originalPrice.toFixed(2)}</span>
-              )}
-              {product.discount > 0 && (
-                <span className="text-sm font-bold text-[#D4AF37]">({product.discount}% OFF)</span>
+              <span className="text-3xl font-bold text-[#B78472]">₹{currentPrice.toFixed(2)}</span>
+              {product.discountPrice > 0 && product.discountPrice < product.price && (
+                <span className="text-lg text-gray-400 line-through">₹{product.price.toFixed(2)}</span>
               )}
             </div>
-            <p className="text-xs text-gray-500">Inclusive of all taxes</p>
-          </div>
-
-          {/* Urgency Trigger */}
-          <div className="bg-red-50 text-red-700 text-sm py-2 px-4 rounded mb-6 flex items-center">
-            <span className="animate-pulse mr-2 h-2 w-2 bg-red-600 rounded-full"></span>
-            Only 3 left in stock! 12 people bought this in the last 24 hours.
+            
+            <p className="text-gray-600 leading-relaxed text-sm mb-6">
+              {product.description}
+            </p>
           </div>
 
           {/* Buttons */}
@@ -146,22 +166,26 @@ const PDP = () => {
 
           {/* Accordions */}
           <div className="border-t border-gray-200">
-            {['Offers', 'Description', 'Material & Care', 'Shipping & Returns'].map((tab, idx) => (
-              <div key={idx} className="border-b border-gray-200">
-                <button className="w-full py-4 flex justify-between items-center text-left font-medium text-[#0F2C59] hover:text-[#B78472]">
-                  {tab}
-                  <FiChevronDown />
+            {['Description', 'Materials & Care', 'Offers'].map((item) => (
+              <div key={item} className="border-b border-gray-200">
+                <button 
+                  onClick={() => setTab(tab === item ? '' : item)}
+                  className="w-full py-4 flex justify-between items-center text-[#0F2C59] font-bold text-sm uppercase tracking-wide hover:text-[#B78472] transition-colors"
+                >
+                  {item}
+                  <FiChevronDown className={`transform transition-transform ${tab === item ? 'rotate-180' : ''}`} />
                 </button>
-                {/* Simulated open state for Description */}
-                {tab === 'Description' && (
+                {tab === item && item === 'Description' && (
                   <div className="pb-4 text-sm text-gray-600 font-sans leading-relaxed">
-                    Elevate your ethnic ensemble with this meticulously crafted {product.name}. 
-                    Designed to blend traditional aesthetics with contemporary minimalism, this piece 
-                    features intricate detailing and a premium finish. Perfect for festive occasions 
-                    or adding a statement to your everyday wear.
+                    {product.description}
                   </div>
                 )}
-                {tab === 'Offers' && (
+                {tab === item && item === 'Materials & Care' && (
+                  <div className="pb-4 text-sm text-gray-600 font-sans leading-relaxed">
+                    <p>Wipe with a clean, dry cloth when needed. Keep away from water and harsh chemicals. Store in a cool, dry place to prevent tarnishing.</p>
+                  </div>
+                )}
+                {tab === item && item === 'Offers' && (
                   <div className="pb-4 text-sm text-gray-600 font-sans leading-relaxed">
                     <ul className="list-disc pl-5 space-y-2 text-sm">
                       <li>Use Code: ELORE10 for 10% off.</li>

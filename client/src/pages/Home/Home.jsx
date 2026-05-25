@@ -1,24 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchFeatured } from '../../store/slices/productSlice';
+import { userAPI } from '../../services/api';
+import { initAuth } from '../../store/slices/authSlice';
 
 const Home = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { featured: products, loading } = useSelector((state) => state.product);
   const { addToCart } = useCart();
 
   useEffect(() => {
-    fetch('/data.json')
-      .then(res => res.json())
-      .then(data => {
-        setProducts(data.products.filter(p => p.isBestSeller).slice(0, 4));
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching data:', err);
-        setLoading(false);
-      });
-  }, []);
+    dispatch(fetchFeatured());
+  }, [dispatch]);
+
+  const handleWishlist = async (e, productId) => {
+    e.preventDefault();
+    try {
+      await userAPI.toggleWishlist(productId);
+      dispatch(initAuth());
+    } catch (err) {
+      console.error(err);
+      alert('Please login to add items to your wishlist.');
+    }
+  };
 
   return (
     <div className="w-full">
@@ -47,12 +53,12 @@ const Home = () => {
         <h2 className="text-2xl font-serif text-center mb-8 text-[#0F2C59]">Shop by Category</h2>
         <div className="flex flex-wrap justify-center gap-6 md:gap-12">
           {[
-            { name: 'Oxidized', img: '/oxidized_necklace.png', link: '/collections/oxidized' },
-            { name: 'Gold Plated', img: '/gold_bangles.png', link: '/collections/gold-plated' },
-            { name: 'Silver', img: '/silver_earrings.png', link: '/collections/silver' },
-            { name: 'Men\'s', img: '/mens_ring.png', link: '/collections/mens' },
+            { name: 'Oxidized', img: '/oxidized_necklace.png', slug: 'oxidized' },
+            { name: 'Gold Plated', img: '/gold_bangles.png', slug: 'gold-plated' },
+            { name: 'Silver', img: '/silver_earrings.png', slug: 'silver' },
+            { name: 'Men\'s', img: '/mens_ring.png', slug: 'mens' },
           ].map((cat, i) => (
-            <Link key={i} to={cat.link} className="flex flex-col items-center group">
+            <Link key={i} to={`/collections/${cat.slug}`} className="flex flex-col items-center group">
               <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-transparent group-hover:border-[#D4AF37] transition-all p-1">
                 <img src={cat.img} alt={cat.name} className="w-full h-full object-cover rounded-full" />
               </div>
@@ -84,9 +90,12 @@ const Home = () => {
                        <img src={product.image} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={product.name} />
                        <img src={product.hoverImage} className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500" alt={product.name + ' worn'} />
                      </Link>
-                     <div className="absolute top-2 right-2 p-1.5 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:text-red-500 text-gray-400">
+                     <button 
+                       onClick={(e) => handleWishlist(e, product._id || product.id)}
+                       className="absolute top-2 right-2 p-1.5 bg-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:text-red-500 text-gray-400"
+                     >
                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                     </div>
+                     </button>
                      <div className="absolute bottom-0 left-0 right-0 bg-white/90 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                        <button 
                          onClick={(e) => { e.preventDefault(); addToCart(product); }}

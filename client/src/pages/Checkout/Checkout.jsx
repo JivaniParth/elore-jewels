@@ -1,28 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { orderAPI } from '../../services/api';
+import { placeOrder } from '../../store/slices/orderSlice';
+import StripeWrapper from '../../components/StripeWrapper';
+import PaymentForm from '../../components/PaymentForm';
 
 const Checkout = () => {
   const { cartItems, cartTotal } = useCart();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Info, 2: Shipping, 3: Payment
+  const dispatch = useDispatch();
+  const { user, isAuthenticated } = useSelector(state => state.auth);
+  
+  const [step, setStep] = useState(1); 
   const [loading, setLoading] = useState(false);
   
-  // Basic Form State
-  const [info, setInfo] = useState({ email: '', firstName: '', lastName: '', address: '', city: '', state: '', zip: '' });
+  const [info, setInfo] = useState({ 
+    email: '', firstName: '', lastName: '', address: '', city: '', state: '', zip: '' 
+  });
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const [clientSecret, setClientSecret] = useState('');
 
-  const handlePay = () => {
-    setLoading(true);
-    // Simulate API Call via Axios
-    setTimeout(() => {
-      setLoading(false);
-      alert('Order Placed Successfully!');
-      // Assuming clearCart() would exist, otherwise redirect
-      navigate('/');
-    }, 2000);
-  };
+  // Prefill user data
+  useEffect(() => {
+    if (user && isAuthenticated) {
+      setInfo(prev => ({
+        ...prev,
+        email: user.email || '',
+        firstName: user.name ? user.name.split(' ')[0] : '',
+        lastName: user.name ? user.name.split(' ').slice(1).join(' ') : '',
+        address: user.addresses?.[0]?.street || '',
+        city: user.addresses?.[0]?.city || '',
+        state: user.addresses?.[0]?.state || '',
+        zip: user.addresses?.[0]?.zipCode || ''
+      }));
+    }
+  }, [user, isAuthenticated]);
 
   if (cartItems.length === 0) {
     return (
@@ -35,6 +50,59 @@ const Checkout = () => {
 
   const shippingCost = shippingMethod === 'express' ? 150 : 0;
   const finalTotal = cartTotal + shippingCost;
+
+  // Prepare Stripe Intent when reaching Step 3
+  const handleProceedToPayment = async () => {
+    setStep(3);
+    if (paymentMethod === 'card' && !clientSecret) {
+      try {
+        const res = await orderAPI.stripeIntent(finalTotal);
+        setClientSecret(res.data.clientSecret);
+      } catch (err) {
+        console.error("Failed to create stripe intent", err);
+      }
+    }
+  };
+
+  const handlePaymentSuccess = async (paymentIntent) => {
+    try {
+      const orderData = {
+        orderItems: cartItems.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          image: item.image,
+          price: item.price,
+          product: item.id || item._id
+        })),
+        shippingAddress: {
+          address: info.address,
+          city: info.city,
+          postalCode: info.zip,
+          country: 'India'
+        },
+        paymentMethod: paymentMethod === 'card' ? 'Stripe' : 'COD',
+        paymentStatus: paymentMethod === 'card' ? 'Completed' : 'Pending',
+        stripePaymentId: paymentIntent?.id,
+        itemsPrice: cartTotal,
+        shippingPrice: shippingCost,
+        totalPrice: finalTotal
+      };
+      
+      const result = await dispatch(placeOrder(orderData)).unwrap();
+      // Assuming context has a clearCart method (not implemented, so we skip for now)
+      navigate(`/orders/${result._id}/success`);
+    } catch (err) {
+      alert(err || "Error placing order");
+      setLoading(false);
+    }
+  };
+
+  const handlePay = () => {
+    if (paymentMethod === 'cod') {
+      setLoading(true);
+      handlePaymentSuccess(null);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-12 font-sans max-w-6xl flex flex-col md:flex-row gap-12">
@@ -73,8 +141,8 @@ const Checkout = () => {
               <Link to="/cart" className="text-[#B78472] hover:underline text-sm">&lt; Return to cart</Link>
               <button 
                 onClick={() => {
-                  if(info.email && info.address) setStep(2);
-                  else alert('Please fill required fields');
+                  if(info.email && info.address && info.city) setStep(2);
+                  else alert('Please fill required fields (Email, Address, City)');
                 }} 
                 className="bg-[#0F2C59] hover:bg-[#144272] text-white px-8 py-3 font-bold uppercase tracking-widest text-sm transition-colors rounded-sm"
               >
@@ -89,12 +157,12 @@ const Checkout = () => {
             <div className="border border-gray-200 rounded-sm mb-8">
               <div className="flex justify-between p-4 border-b">
                 <span className="text-gray-500 w-24">Contact</span>
-                <span className="flex-1">{info.email || 'user@example.com'}</span>
+                <span className="flex-1">{info.email}</span>
                 <button onClick={() => setStep(1)} className="text-[#B78472] text-sm hover:underline">Change</button>
               </div>
               <div className="flex justify-between p-4">
                 <span className="text-gray-500 w-24">Ship to</span>
-                <span className="flex-1">{info.address || '123 Jewelry Lane, NY 10001'}</span>
+                <span className="flex-1">{info.address}, {info.city} {info.zip}</span>
                 <button onClick={() => setStep(1)} className="text-[#B78472] text-sm hover:underline">Change</button>
               </div>
             </div>
@@ -119,7 +187,7 @@ const Checkout = () => {
 
             <div className="flex justify-between items-center mt-8">
               <button onClick={() => setStep(1)} className="text-[#B78472] hover:underline text-sm">&lt; Return to information</button>
-              <button onClick={() => setStep(3)} className="bg-[#0F2C59] hover:bg-[#144272] text-white px-8 py-3 font-bold uppercase tracking-widest text-sm transition-colors rounded-sm">
+              <button onClick={handleProceedToPayment} className="bg-[#0F2C59] hover:bg-[#144272] text-white px-8 py-3 font-bold uppercase tracking-widest text-sm transition-colors rounded-sm">
                 Continue to payment
               </button>
             </div>
@@ -133,23 +201,24 @@ const Checkout = () => {
 
              <div className="border border-gray-200 rounded-sm mb-8">
                <label className="flex p-4 items-center cursor-pointer border-b hover:bg-gray-50 bg-gray-50">
-                 <input type="radio" name="payment" checked={paymentMethod === 'card'} onChange={() => setPaymentMethod('card')} className="mr-4 accent-[#0F2C59]" />
+                 <input type="radio" name="payment" checked={paymentMethod === 'card'} onChange={() => {
+                   setPaymentMethod('card');
+                   handleProceedToPayment(); // Re-trigger intent fetch if missing
+                 }} className="mr-4 accent-[#0F2C59]" />
                  <span className="font-medium">Credit / Debit Card</span>
                </label>
                {paymentMethod === 'card' && (
-                 <div className="p-4 bg-white grid gap-4">
-                   <input type="text" placeholder="Card number" className="w-full border border-gray-300 p-3 rounded-sm outline-none focus:border-[#0F2C59]" />
-                   <div className="grid grid-cols-2 gap-4">
-                     <input type="text" placeholder="Expiration date (MM/YY)" className="w-full border border-gray-300 p-3 rounded-sm outline-none focus:border-[#0F2C59]" />
-                     <input type="text" placeholder="Security code" className="w-full border border-gray-300 p-3 rounded-sm outline-none focus:border-[#0F2C59]" />
-                   </div>
+                 <div className="p-6 bg-white">
+                   <StripeWrapper clientSecret={clientSecret}>
+                     <PaymentForm 
+                        onSuccess={handlePaymentSuccess} 
+                        isProcessing={loading} 
+                        setIsProcessing={setLoading} 
+                        buttonText={`Pay ₹${finalTotal.toFixed(2)}`}
+                     />
+                   </StripeWrapper>
                  </div>
                )}
-               
-               <label className="flex p-4 items-center cursor-pointer border-b hover:bg-gray-50">
-                 <input type="radio" name="payment" checked={paymentMethod === 'upi'} onChange={() => setPaymentMethod('upi')} className="mr-4 accent-[#0F2C59]" />
-                 <span className="font-medium">UPI / Net Banking</span>
-               </label>
 
                <label className="flex p-4 items-center cursor-pointer hover:bg-gray-50">
                  <input type="radio" name="payment" checked={paymentMethod === 'cod'} onChange={() => setPaymentMethod('cod')} className="mr-4 accent-[#0F2C59]" />
@@ -159,13 +228,15 @@ const Checkout = () => {
 
              <div className="flex justify-between items-center mt-8">
               <button onClick={() => setStep(2)} className="text-[#B78472] hover:underline text-sm">&lt; Return to shipping</button>
-              <button 
-                onClick={handlePay} 
-                disabled={loading}
-                className={`px-8 py-3 font-bold uppercase tracking-widest text-sm transition-colors rounded-sm shadow-md ${loading ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-[#D4AF37] hover:bg-[#c4a133] text-white'}`}
-              >
-                {loading ? 'Processing...' : 'Pay Now'}
-              </button>
+              {paymentMethod === 'cod' && (
+                <button 
+                  onClick={handlePay} 
+                  disabled={loading}
+                  className={`px-8 py-3 font-bold uppercase tracking-widest text-sm transition-colors rounded-sm shadow-md ${loading ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-[#D4AF37] hover:bg-[#c4a133] text-white'}`}
+                >
+                  {loading ? 'Processing...' : `Place Order (₹${finalTotal.toFixed(2)})`}
+                </button>
+              )}
             </div>
           </div>
         )}
