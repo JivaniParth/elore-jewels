@@ -31,7 +31,7 @@ const Home = () => {
       {/* Hero Section */}
       <section className="relative w-full h-[60vh] md:h-[80vh] bg-gray-200 overflow-hidden">
         <img 
-          src="/hero_banner.png" 
+          src={import.meta.env.VITE_CLOUDFRONT_URL ? `${import.meta.env.VITE_CLOUDFRONT_URL.replace(/\/$/, '')}/banners/hero_banner.png` : "/hero_banner.png"} 
           alt="Elore Jewels - Festive Collection" 
           className="absolute inset-0 w-full h-full object-cover object-top"
         />

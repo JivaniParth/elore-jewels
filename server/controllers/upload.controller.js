@@ -30,7 +30,13 @@ const upload = multer({
 const uploadImage = (req, res) => {
   upload(req, res, (err) => {
     if (err) return res.status(400).json({ success: false, message: err.message });
-    const urls = req.files.map(f => f.location);
+    const urls = req.files.map(f => {
+      if (process.env.AWS_CLOUDFRONT_URL) {
+        const cleanCloudFrontUrl = process.env.AWS_CLOUDFRONT_URL.replace(/\/$/, '');
+        return `${cleanCloudFrontUrl}/${f.key}`;
+      }
+      return f.location;
+    });
     res.json({ success: true, urls });
   });
 };
